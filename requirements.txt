@@ -1,0 +1,11 @@
+# 核心依赖（运行 PPT Agent Backend 所需）
+python-pptx
+chromadb
+requests
+fastapi
+pydantic
+uvicorn
+langchain-openai
+langchain-core
+
+
