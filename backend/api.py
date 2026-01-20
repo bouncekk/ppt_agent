@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import hashlib
+import secrets
 from pathlib import Path
 from typing import Dict, List, Optional
 from uuid import uuid4
 
-from fastapi import FastAPI, File, HTTPException, Query, UploadFile
-from fastapi.responses import JSONResponse
+import requests
+from fastapi import Depends, FastAPI, File, Header, HTTPException, Query, UploadFile
+from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from core.ppt_parser import Slide, parse_ppt
@@ -17,13 +21,18 @@ from core.llm_agent import AgentConfig, expand_slide_with_tools
 BASE_DIR = Path(__file__).resolve().parent.parent
 UPLOAD_DIR = BASE_DIR / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
+FRONTEND_DIR = BASE_DIR / "frontend"
 
 
 app = FastAPI(title="PPT Agent Backend", version="0.1.0")
+app.mount("/ui", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="ui")
 
 
 # 简单的内存存储：ppt_id -> List[Slide]
 PPT_SLIDES: Dict[str, List[Slide]] = {}
+
+USERS: Dict[str, str] = {}
+TOKENS: Dict[str, str] = {}
 
 
 class SlideOut(BaseModel):
@@ -54,6 +63,75 @@ class ExpandResponse(BaseModel):
     expanded_markdown: str
 
 
+class AuthRequest(BaseModel):
+    username: str
+    password: str
+
+
+class AuthResponse(BaseModel):
+    username: str
+    token: str
+
+
+class UploadUrlRequest(BaseModel):
+    url: str
+
+
+def _hash_password(password: str) -> str:
+    return hashlib.sha256(password.encode("utf-8")).hexdigest()
+
+
+def get_current_user(authorization: str | None = Header(default=None)) -> str:
+    if not authorization:
+        raise HTTPException(status_code=401, detail="未登录")
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="登录信息无效")
+    token = authorization[len("Bearer ") :].strip()
+    username = TOKENS.get(token)
+    if not username:
+        raise HTTPException(status_code=401, detail="登录已过期")
+    return username
+
+
+@app.get("/")
+async def root() -> RedirectResponse:
+    return RedirectResponse(url="/ui/index.html")
+
+
+@app.post("/auth/register")
+async def register(req: AuthRequest) -> Dict[str, str]:
+    username = (req.username or "").strip()
+    password = req.password or ""
+
+    if not username or not password:
+        raise HTTPException(status_code=400, detail="用户名或密码不能为空")
+    if len(username) < 4 or len(username) > 32:
+        raise HTTPException(status_code=400, detail="用户名长度需为 4-32")
+    if len(password) < 6:
+        raise HTTPException(status_code=400, detail="密码至少 6 位")
+    if username in USERS:
+        raise HTTPException(status_code=400, detail="用户名已存在")
+
+    USERS[username] = _hash_password(password)
+    return {"status": "ok"}
+
+
+@app.post("/auth/login", response_model=AuthResponse)
+async def login(req: AuthRequest) -> AuthResponse:
+    username = (req.username or "").strip()
+    password = req.password or ""
+
+    pwd_hash = USERS.get(username)
+    if not pwd_hash:
+        raise HTTPException(status_code=400, detail="用户名或密码错误")
+    if pwd_hash != _hash_password(password):
+        raise HTTPException(status_code=400, detail="用户名或密码错误")
+
+    token = secrets.token_hex(24)
+    TOKENS[token] = username
+    return AuthResponse(username=username, token=token)
+
+
 @app.get("/health")
 async def health_check() -> Dict[str, str]:
     """后端健康检查接口。"""
@@ -62,7 +140,10 @@ async def health_check() -> Dict[str, str]:
 
 
 @app.post("/upload", response_model=UploadResponse)
-async def upload_ppt(file: UploadFile = File(...)) -> UploadResponse:
+async def upload_ppt(
+    file: UploadFile = File(...),
+    _: str = Depends(get_current_user),
+) -> UploadResponse:
     """上传 PPT 文件，解析并写入向量库。
 
     返回生成的 ppt_id 以及解析到的页数。
@@ -85,8 +166,53 @@ async def upload_ppt(file: UploadFile = File(...)) -> UploadResponse:
     return UploadResponse(ppt_id=ppt_id, filename=file.filename, num_slides=len(slides))
 
 
+@app.post("/upload_url", response_model=UploadResponse)
+async def upload_ppt_by_url(
+    req: UploadUrlRequest,
+    _: str = Depends(get_current_user),
+) -> UploadResponse:
+    url = (req.url or "").strip()
+    if not url:
+        raise HTTPException(status_code=400, detail="url 不能为空")
+    if not url.lower().split("?")[0].endswith(".pptx"):
+        raise HTTPException(status_code=400, detail="仅支持 .pptx 文件 URL")
+
+    ppt_id = uuid4().hex
+    dest_path = UPLOAD_DIR / f"{ppt_id}.pptx"
+
+    max_bytes = 50 * 1024 * 1024
+    total = 0
+    try:
+        resp = requests.get(url, stream=True, timeout=20)
+        resp.raise_for_status()
+        with dest_path.open("wb") as f:
+            for chunk in resp.iter_content(chunk_size=1024 * 1024):
+                if not chunk:
+                    continue
+                total += len(chunk)
+                if total > max_bytes:
+                    raise HTTPException(status_code=400, detail="文件过大，最大 50MB")
+                f.write(chunk)
+    except HTTPException:
+        if dest_path.exists():
+            dest_path.unlink(missing_ok=True)
+        raise
+    except Exception:
+        if dest_path.exists():
+            dest_path.unlink(missing_ok=True)
+        raise HTTPException(status_code=400, detail="URL 下载失败")
+
+    slides = parse_ppt(dest_path)
+    PPT_SLIDES[ppt_id] = slides
+    index_ppt_file(dest_path, ppt_id=ppt_id)
+    return UploadResponse(ppt_id=ppt_id, filename=dest_path.name, num_slides=len(slides))
+
+
 @app.get("/slides", response_model=List[SlideOut])
-async def list_slides(ppt_id: str = Query(..., description="上传返回的 PPT 标识")) -> List[SlideOut]:
+async def list_slides(
+    ppt_id: str = Query(..., description="上传返回的 PPT 标识"),
+    _: str = Depends(get_current_user),
+) -> List[SlideOut]:
     """列出某个 PPT 的所有页面结构。"""
 
     slides = PPT_SLIDES.get(ppt_id)
@@ -104,6 +230,7 @@ async def search_slides(
     ppt_id: str = Query(..., description="目标 PPT 标识"),
     q: str = Query(..., description="查询语句，如某个知识点关键词"),
     top_k: int = Query(5, ge=1, le=20, description="返回的最大结果数"),
+    _: str = Depends(get_current_user),
 ) -> List[SearchHit]:
     """在指定 PPT 内进行语义检索，返回最相关的若干页面。"""
 
@@ -143,6 +270,7 @@ async def expand_slide(
     ppt_id: str = Query(..., description="目标 PPT 标识"),
     slide_index: int = Query(..., ge=1, description="要扩展的页面索引（从 1 开始）"),
     use_wikipedia: bool = Query(True, description="是否启用 Wikipedia 外部知识"),
+    _: str = Depends(get_current_user),
 ) -> ExpandResponse:
     """为指定 PPT 的某一页生成扩展讲解（调用 Agent + Checklayer）。"""
 

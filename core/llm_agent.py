@@ -17,9 +17,9 @@ from typing import List, Optional
 
 from langchain_openai import ChatOpenAI
 
-from ppt_parser import Slide
-from vector_store import query_similar_slides
-from external_knowledge import search_wikipedia
+from core.ppt_parser import Slide
+from core.vector_store import query_similar_slides
+from core.external_knowledge import search_wikipedia
 
 
 # 为了避免在代码仓库中硬编码密钥，这里通过环境变量读取：
@@ -70,6 +70,7 @@ def build_prompt_for_slide_expansion(
     """构造用于 DeepSeek 等 LLM 的扩展提示词。"""
 
     wiki_block = "\n\n".join(wiki_snippets) if wiki_snippets else "无"
+    bullets_block = "\n- ".join(slide.bullets) if slide.bullets else "无"
 
     return f"""你是一个帮助学生考前复习的智能助教，需要根据 PPT 内的一页内容，
 结合相关页面与外部知识，生成结构化的扩展讲解笔记。
@@ -82,7 +83,8 @@ def build_prompt_for_slide_expansion(
 索引: {slide.index}
 标题: {slide.title}
 要点:
-- " + "\n- ".join(slide.bullets) + f"\n备注: {slide.notes or '无'}
+- {bullets_block}
+备注: {slide.notes or '无'}
 
 【PPT 内部相关页面（检索得到）】
 {retrieved_context or '无相关页面'}
