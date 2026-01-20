@@ -1,0 +1,407 @@
+[
+  {
+    "index": 1,
+    "title": "机器学习",
+    "bullets": [
+      "董启文:",
+      "E-mail: qwdong@dase.ecnu.edu.cn",
+      "手机：13817021601",
+      "研究生：胡思劼，51265903082",
+      "本科：",
+      "非全："
+    ],
+    "notes": null
+  },
+  {
+    "index": 2,
+    "title": "教材:",
+    "bullets": [
+      "“统计学习方法”, 李航 著, 清华大学出版社",
+      "“机器学习”, 周志华 著, 清华大学出版社",
+      "考核方式：",
+      "研究生：考查，第一项",
+      "本科生：考试，第一、二项",
+      "平时成绩: 50%,",
+      "出勤:10%；HomeWork: 20%; Project: 20%",
+      "期末考试: 50%"
+    ],
+    "notes": null
+  },
+  {
+    "index": 3,
+    "title": "Slide 3",
+    "bullets": [],
+    "notes": null
+  },
+  {
+    "index": 4,
+    "title": "目录",
+    "bullets": [
+      "1.\t统计学习",
+      "2.\t监督学习",
+      "3.\t统计学习三要素",
+      "4.\t模型评估与模型选择",
+      "5.\t正则化与交叉验证",
+      "6.\t泛化能力",
+      "7.\t生成模型与判别模型",
+      "8.\t分类问题",
+      "9.\t标注问题",
+      "10.\t回归问题"
+    ],
+    "notes": null
+  },
+  {
+    "index": 5,
+    "title": "一、统计学习",
+    "bullets": [
+      "统计学习的对象",
+      "data ：计算机及互联网上的各种数字、文字、图像、视 频、音频数据以及它们的组合。",
+      "数据的基本假设是同类数据具有一定的统计规律性。",
+      "统计学习的目的",
+      "用于对数据（特别是未知数据）进行预测和分析。"
+    ],
+    "notes": null
+  },
+  {
+    "index": 6,
+    "title": "统计学习",
+    "bullets": [
+      "统计学习的方法",
+      "分类：",
+      " Supervised learning",
+      " Unsupervised learning",
+      " Semi-supervised learning",
+      " Reinforcement learning",
+      "监督学习：",
+      " 训练数据 training data",
+      " 模型 model\t-------\t假设空间 hypothesis",
+      " 评价准则 evaluation  criterion -------- 策略 strategy",
+      " 算法 algorithm"
+    ],
+    "notes": null
+  },
+  {
+    "index": 7,
+    "title": "统计学习",
+    "bullets": [
+      "统计学习的研究：",
+      " 统计学习方法",
+      " 统计学习理论（统计学习方法的有效性和效率和基本理论）",
+      " 统计学习应用"
+    ],
+    "notes": null
+  },
+  {
+    "index": 8,
+    "title": "二、监督学习",
+    "bullets": [
+      "Instance，feature vector，feature space",
+      "输入实例x的特征向量：",
+      " x(i)与xi  不同,后者表示多个输入变量中的第i个",
+      "训练集：",
+      "输入变量和输出变量：",
+      "分类问题、回归问题、标注问题"
+    ],
+    "notes": null
+  },
+  {
+    "index": 9,
+    "title": "监督学习",
+    "bullets": [
+      "联合概率分布",
+      "假设输入与输出的随机变量X和Y遵循联合概率分布P(X,Y)",
+      "P(X,Y)为分布函数或分布密度函数",
+      "对于学习系统来说，联合概率分布是未知的，",
+      "训练数据和测试数据被看作是依联合概率分布P(X,Y)独立 同分布产生的。",
+      "假设空间",
+      "监督学习目的是学习一个由输入到输出的映射，称为模型",
+      "模式的集合就是假设空间（hypothesis space）",
+      "概率模型:条件概率分布P(Y|X), 决策函数：Y=f(X)"
+    ],
+    "notes": null
+  },
+  {
+    "index": 10,
+    "title": "监督学习",
+    "bullets": [
+      "问题的形式化"
+    ],
+    "notes": null
+  },
+  {
+    "index": 11,
+    "title": "三、统计学习三要素",
+    "bullets": [
+      "模型：假设空间",
+      "决策函数的集合：",
+      "参数空间",
+      "条件概率的集合：",
+      "参数空间"
+    ],
+    "notes": null
+  },
+  {
+    "index": 12,
+    "title": "统计学习三要素",
+    "bullets": [
+      "策略：损失函数",
+      "损失函数：一次预测的好坏",
+      "风险函数：平均意义下模型预测的坏",
+      "0-1损失函数 0-1 loss function",
+      "平方损失函数 quadratic loss function",
+      "绝对损失函数 absolute loss function"
+    ],
+    "notes": null
+  },
+  {
+    "index": 13,
+    "title": "统计学习三要素",
+    "bullets": [
+      "策略",
+      "对数损失函数 logarithmic loss function 或对数似然损失 函数 loglikelihood loss function",
+      "损失函数的期望",
+      "风险函数 risk function 期望损失 expected loss",
+      "由P(x,y)可以直接求出P(y|x),但不知道，",
+      "经验风险 empirical risk ，经验损失 empirical loss"
+    ],
+    "notes": null
+  },
+  {
+    "index": 14,
+    "title": "统计学习三要素",
+    "bullets": [
+      "策略：经验风险最小化与结构风险最小化",
+      "经验风险最小化最优模型",
+      "当样本容量很小时，经验风险最小化学习的效果未必很 好，会产生“过拟合over-fitting”",
+      "结构风险最小化 structure risk minimization，为防止过 拟合提出的策略，等价于正则化（regularization），加 入正则化项regularizer，或罚项 penalty term："
+    ],
+    "notes": null
+  },
+  {
+    "index": 15,
+    "title": "统计学习三要素",
+    "bullets": [
+      "求最优模型就是求解最优化问题："
+    ],
+    "notes": null
+  },
+  {
+    "index": 16,
+    "title": "统计学习三要素",
+    "bullets": [
+      "算法：",
+      "如果最优化问题有显式的解析式，算法比较简单",
+      "但通常解析式不存在，就需要数值计算的方法"
+    ],
+    "notes": null
+  },
+  {
+    "index": 17,
+    "title": "四、模型评估与模型选择",
+    "bullets": [
+      "训练误差，训练数据集的平均损失",
+      "测试误差，测试数据集的平均损失",
+      "损失函数是0-1 损失时：",
+      "测试数据集的准确率："
+    ],
+    "notes": null
+  },
+  {
+    "index": 18,
+    "title": "模型评估与模型选择",
+    "bullets": [
+      "过拟合与模型选择",
+      "假设给定训练数据集",
+      "经验风险最小："
+    ],
+    "notes": null
+  },
+  {
+    "index": 19,
+    "title": "模型评估与模型选择",
+    "bullets": [],
+    "notes": null
+  },
+  {
+    "index": 20,
+    "title": "模型评估与模型选择",
+    "bullets": [],
+    "notes": null
+  },
+  {
+    "index": 21,
+    "title": "五、正则化与交叉验证",
+    "bullets": [
+      "正则化一般形式：",
+      "回归问题中："
+    ],
+    "notes": null
+  },
+  {
+    "index": 22,
+    "title": "正则化与交叉验证",
+    "bullets": [
+      "交叉验证Cross Validation：",
+      "训练集 training set： 用于训练模型",
+      "验证集 validation set：",
+      "用于模型选择",
+      "测试集\ttest\tset：\t用于最终对学习方法的评估",
+      "简单交叉验证",
+      "S折交叉验证 S-Fold Cross Validation",
+      "留一交叉验证"
+    ],
+    "notes": null
+  },
+  {
+    "index": 23,
+    "title": "六、泛化能力 generalization ability",
+    "bullets": [
+      "泛化误差 generalization\terror",
+      "泛化误差上界",
+      "比较学习方法的泛化能力------比较泛化误差上界",
+      "性质：样本容量增加，泛化误差趋于0",
+      "",
+      "假设空间容量越大， 泛化误差越大",
+      "二分类问题",
+      "期望风险和经验风险"
+    ],
+    "notes": null
+  },
+  {
+    "index": 24,
+    "title": "泛化能力 generalization ability",
+    "bullets": [
+      "经验风险最小化函数：",
+      "泛化能力：",
+      "定理：泛化误差上界，二分类问题，当假设空间是有限",
+      "个函数的结合",
+      "，对任意一个函数f， 至少",
+      "以概率1-δ，以下不等式成立："
+    ],
+    "notes": null
+  },
+  {
+    "index": 25,
+    "title": "七、生成模型与判别模型",
+    "bullets": [
+      "监督学习的目的就是学习一个模型：",
+      "决策函数：",
+      "条件概率分布：",
+      "生成方法Generative approach 对应生成模型：generative model，",
+      "朴素贝叶斯法和隐马尔科夫模型"
+    ],
+    "notes": null
+  },
+  {
+    "index": 26,
+    "title": "生成模型与判别模型",
+    "bullets": [
+      "判别方法由数据直接学习决策函数f(X)或条件概率分布",
+      "P(Y|X)作为预测的模型，即判别模型",
+      "Discriminative approach对应discriminative model",
+      "K近邻法、感知机、决策树、logistic回归模型、最大熵模 型、支持向量机、提升方法和条件随机场。"
+    ],
+    "notes": null
+  },
+  {
+    "index": 27,
+    "title": "生成模型与判别模型",
+    "bullets": [
+      "各自优缺点：",
+      "生成方法：可还原出联合概率分布P(X,Y), 而判别方法不能。 生成方法的收敛速度更快，当样本容量增加的时候，学到的 模型可以更快地收敛于真实模型；当存在隐变量时，仍可以使用生成方法，而判别方法则不能用。",
+      "判别方法：直接学习到条件概率或决策函数，直接进行预 测，往往学习的准确率更高；由于直接学习Y=f(X)或P(Y|X), 可对数据进行各种程度上的抽象、定义特征并使用特征，因此可以简化学习过程。"
+    ],
+    "notes": null
+  },
+  {
+    "index": 28,
+    "title": "八、分类问题",
+    "bullets": [],
+    "notes": null
+  },
+  {
+    "index": 29,
+    "title": "分类问题",
+    "bullets": [
+      "二分类评价指标",
+      "TP\ttrue positive",
+      "FN\tfalse negative",
+      "FP\tfalse positive",
+      "TN\ttrue\tnegative",
+      "精确率：精度，precision",
+      "召回率: Recall",
+      "F1值",
+      "准确率如何定义？",
+      "第二个字母：预测为正例P还是反例N",
+      "第一个字母：此预测结果是正确T还是错误F"
+    ],
+    "notes": null
+  },
+  {
+    "index": 30,
+    "title": "分类问题",
+    "bullets": [
+      "ROC:(receiver operating characteristic curve)",
+      "受试者工作特征曲线",
+      "AUC: Area Under the Curve",
+      "二分类",
+      "实值输出",
+      "对类别不平衡不敏感",
+      "TP=4",
+      "FP=1"
+    ],
+    "notes": null
+  },
+  {
+    "index": 31,
+    "title": "九、标注问题",
+    "bullets": [
+      "标注：tagging， 结构预测：structure prediction",
+      "输入：观测序列， 输出：标记序列或状态序列",
+      "学习和标注两个过程",
+      "训练集：",
+      "观测序列：",
+      "输出标记序列：",
+      "模型：条件概率分布"
+    ],
+    "notes": null
+  },
+  {
+    "index": 32,
+    "title": "十、回归问题",
+    "bullets": [
+      "回归模型是表示从输入变量到输出变量之间映射的函数.",
+      "回归问题的学习等价于函数拟合。",
+      "学习和预测两个阶段",
+      "训练集："
+    ],
+    "notes": null
+  },
+  {
+    "index": 33,
+    "title": "标注问题",
+    "bullets": [
+      "例子：",
+      "标记表示名词短语的“开始”、“结束”或“其他”",
+      "（分别以B, E, O表示)",
+      "输入：At Microsoft Research, we have an insatiable curiosity and the desire to create new technology that will help define the computing experience.",
+      "输出：At/O Microsoft/B Research/E, we/O have/O an/O insatiable/6 curiosity/E and/O the/O desire/BE to/O create/O new/B technology/E that/O will/O help/O define/O the/O computing/B experience/E."
+    ],
+    "notes": null
+  },
+  {
+    "index": 34,
+    "title": "回归问题",
+    "bullets": [
+      "回归学习最常用的损失函数是平方损失函数，在此情况 下，回归问题可以由 著名的最小二乘法(least squares) 求解。",
+      "股价预测"
+    ],
+    "notes": null
+  },
+  {
+    "index": 35,
+    "title": "Q & A",
+    "bullets": [],
+    "notes": null
+  }
+]

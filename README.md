@@ -59,9 +59,22 @@ pip install -r requirements.txt
 本地运行：
 # TODO: 在实现 FastAPI 后补充实际启动命令，例如：
 # uvicorn app.main:app --reload
+
+# 开发调试
+python -m uvicorn backend.api:app --reload --host 127.0.0.1 --port 8000
+# 稳定运行
+python -m uvicorn backend.api:app --host 127.0.0.1 --port 8000
+
 Docker运行  
 # TODO: 在编写 Dockerfile 和 docker-compose.yml 后补充示例命令
 # docker build -t ppt-agent .
 # docker run -p 8000:8000 ppt-agent
 
+# 必须在同一个终端窗口设置：
+$env:SILICONFLOW_API_KEY="你的key"
+$env:SILICONFLOW_BASE_URL="https://api.siliconflow.cn/v1"
+$env:DEEPSEEK_MODEL="deepseek-ai/DeepSeek-V3.2-Exp"
+
+# 之后构建并启动容器
+docker compose up -d --build
 ```
