@@ -77,4 +77,12 @@ $env:DEEPSEEK_MODEL="deepseek-ai/DeepSeek-V3.2-Exp"
 
 # 之后构建并启动容器
 docker compose up -d --build
+
 ```
+
+### 打开网页
+1. 打开导航页：
+http://localhost:8000/ui/index.html
+
+2. 测试健康检查：
+http://localhost:8000/health
