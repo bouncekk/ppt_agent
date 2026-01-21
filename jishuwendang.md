@@ -1,15 +1,32 @@
-| 模块     | 选型                         | 说明       |
-| ------ | -------------------------- | -------- |
-| 后端框架   | FastAPI                    | 异步 + 服务化 |
-| LLM    | DeepSeek 云 API             | 可替换      |
-| 向量库    | Chroma                     | 本地、轻量    |
-| PPT 解析 | python-pptx | 稳妥       |
-| 外部知识   | Wikipedia        | 权威       |
-| 部署     | Docker + docker-compose    | 云原生      |
-| 协作     | GitHub + Actions           | 工程化      |
+## 《智能体云原⽣开发》期末⼤作业 —— PPT内容扩展智能体
+
+分工：       
+**10235501442尹中成**：架构设计、LLMAgent设计、后端接口实现、实验文档。占比50%。       
+**10235501407周雍佳**：docker容器化实现、前端搭建、实验文档、演示视频。占比50%。      
+
+具体实现流程/分工：
 
 
-架构图：
+项目结构：
+
+
+项目介绍：
+
+
+
+### 一、技术选型
+| 模块     | 选型                         |
+| ------ | -------------------------- | 
+| 后端框架   | FastAPI                    |
+| LLM    | DeepSeek 云 API（deepseek-ai/DeepSeek-V3.2-Exp模型）          | 
+| 向量库    | Chroma                     | 
+| PPT 解析 | python-pptx | 
+| 外部知识   | Wikipedia        | 
+| 部署     | Docker + docker-compose    | 
+| 协作     | GitHub + Actions           | 
+
+
+**架构图**：
 ```
 [ Frontend ]
      |
@@ -37,12 +54,33 @@
         [ Wikipedia / Arxiv ]
 ```
 
-- **技术选型表**：
-  明确了后端框架（FastAPI）、LLM 提供方（DeepSeek 云 API）、向量库（Chroma）、PPT 解析组件（python-pptx）、外部知识源（Wikipedia / Arxiv）、部署方案（Docker + docker-compose）以及协作方式（GitHub + Actions）。
 
-- **系统架构图（初版）**：
+## 技术原理： 
+对 Embedding 的解释
+
+嵌入模型用于将 PPT 中的文本内容映射到向量空间，使语义相近的知识点在向量空间中距离更近，从而支持基于语义的相关性检索。
+
+对 Vector DB 的解释
+
+向量数据库用于存储嵌入向量，并支持高效的相似度搜索，作为系统的长期语义记忆层，为智能体提供上下文支持。Vector DB 的角色是：防止 LLM 胡说
+
+- **系统架构图说明**：
+- PPT 页面
+  ↓
+文档解析（结构化）
+  ↓
+Embedding
+  ↓
+Vector DB（长期记忆）
+  ↓
+基于当前页做语义检索
+  ↓
+将【检索结果 + 当前页】交给 LLM
+  ↓
+生成补充说明
+
   已给出“前端 → FastAPI 后端 → 解析模块 / 向量库 / LLM Agent + Checklayer / 外部知识工具”的整体调用关系，体现出：
-  - 各核心能力（解析、Embedding、检索、推理、外部知识、结果校验）解耦为独立模块；
+  - 各核心能力解耦为独立模块；
   - 向量库作为语义检索的核心数据服务；
   - LLM Agent 通过 Checklayer 对生成结果进行一致性与事实性检查，并与外部知识工具之间通过工具调用的方式进行集成。
 
@@ -55,16 +93,12 @@
   - 通过 Checklayer 后的内容按页面返回给前端展示；
   - 如需延伸阅读或事实校验，Agent 通过 External Knowledge Tool 调用 Wikipedia / Arxiv，补充相关参考资料。
 
-- **代码仓库与协作流程初始化**：
-  - 在 GitHub 创建项目仓库，约定基本分支策略（如 `main` + `dev`），并配置基础的 `.gitignore`；
-  - 预留 GitHub Actions 工作流入口（如 CI 占位文件），后续可以逐步完善自动测试与构建；
-  - README 草稿：包含项目简介、技术选型表引用、架构图链接以及环境准备的初步说明。
+- **云原⽣组件**（如Docker、K8S、Redis,Serverless、微服务等）：
 
 
-当前系统实现了基于 Wikipedia 的外部知识搜索工具，用于补充 PPT 中未覆盖的背景知识；系统工具接口已预留，可扩展接入 Arxiv 等学术资源。
 
 
-## LLM Agent 设计文档
+## LLM Agent 设计
 
 ### 工具链与模块划分
 
@@ -135,3 +169,4 @@
 
 从而为每一页 PPT 生成更完整、可解释、可追溯的数据扩展讲解。
 
+## docker？
