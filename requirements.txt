@@ -8,4 +8,8 @@ uvicorn
 langchain-openai
 langchain-core
 
+python-multipart
+eval_type_backport
+
+
 

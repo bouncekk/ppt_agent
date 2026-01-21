@@ -5,7 +5,7 @@ from typing import List, Dict, Any
 
 import chromadb
 
-from ppt_parser import Slide, parse_ppt
+from core.ppt_parser import Slide, parse_ppt
 
 
 # 本地 Chroma 客户端，使用 PersistentClient 持久化到项目目录下的 chroma_db/
