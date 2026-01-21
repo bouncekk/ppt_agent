@@ -6,7 +6,8 @@
     <title>上传与生成笔记 · PPT Agent</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/ui/assets/app.css" />
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="/ui/assets/marked.min.js"></script>
+    <script src="/ui/assets/html2pdf.bundle.min.js"></script>
   </head>
   <body class="min-h-screen bg-slate-950 text-slate-50">
     <div class="border-b border-white/10 bg-slate-950/70 backdrop-blur">
@@ -70,7 +71,10 @@
               <div class="min-w-0">
                 <div class="text-sm font-semibold">查漏补缺笔记</div>
               </div>
-              <button id="copyBtn" class="rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 px-4 py-2 text-sm">复制</button>
+              <div class="flex items-center gap-2">
+                <button id="copyBtn" class="rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 px-4 py-2 text-sm">复制</button>
+                <button id="exportPdfBtn" class="rounded-xl bg-emerald-400 text-slate-950 px-4 py-2 text-sm font-semibold hover:bg-emerald-300">导出 PDF</button>
+              </div>
             </div>
 
             <div class="mt-5 h-[560px] overflow-hidden rounded-2xl bg-black/10 border border-white/10">

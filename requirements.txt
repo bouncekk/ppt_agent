@@ -8,8 +8,12 @@ uvicorn
 langchain-openai
 langchain-core
 
+# Markdown 渲染与 PDF 导出
+markdown
+weasyprint
+
 python-multipart
+
+# 可选：如果需要运行 pytest 测试，可以取消下面一行的注释
+# pytest
 eval_type_backport
-
-
-
