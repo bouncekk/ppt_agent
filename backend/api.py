@@ -7,7 +7,7 @@ from typing import Dict, List, Optional
 from uuid import uuid4
 
 import requests
-from fastapi import Depends, FastAPI, File, Header, HTTPException, Query, UploadFile
+from fastapi import Depends, FastAPI, File, Header, HTTPException, Query, UploadFile, Response
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -15,6 +15,13 @@ from pydantic import BaseModel
 from core.ppt_parser import Slide, parse_ppt
 from core.vector_store import index_ppt_file, query_similar_slides
 from core.llm_agent import AgentConfig, expand_slide_with_tools
+
+import markdown
+
+try:  # WeasyPrint 依赖系统级库，在本地缺失时不应阻止整个后端启动
+    from weasyprint import HTML  # type: ignore
+except Exception:  # pragma: no cover - 仅在缺失依赖时触发
+    HTML = None  # type: ignore
 
 
 # 以项目根目录 ppt_agent 为基准
@@ -61,6 +68,11 @@ class ExpandResponse(BaseModel):
     slide_index: int
     title: str
     expanded_markdown: str
+
+
+class NoteExportRequest(BaseModel):
+    markdown: str
+    filename: Optional[str] = None
 
 
 class AuthRequest(BaseModel):
@@ -310,4 +322,66 @@ async def expand_slide(
         slide_index=slide.index,
         title=slide.title,
         expanded_markdown=expanded,
+    )
+
+
+@app.post("/export_note_pdf")
+async def export_note_pdf(payload: NoteExportRequest) -> Response:
+    """根据前端传入的 Markdown 文本导出为 PDF 文件。
+
+    前端可以在“复制”按钮旁边增加“导出 PDF”按钮：
+    - 将当前笔记的 markdown 文本放入 `markdown` 字段
+    - 可选提供 `filename` 字段自定义下载文件名
+    返回值为 application/pdf 的二进制流，带 Content-Disposition 便于浏览器直接下载。
+    """
+
+    if HTML is None:
+        # 在未正确安装 WeasyPrint / 底层 GTK 依赖时，给出明确提示
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "当前环境未完整安装 WeasyPrint 所需的系统依赖，"
+                "可在 Docker / 服务器环境中启用 PDF 导出，"
+                "本地调试时请先忽略该功能。"
+            ),
+        )
+
+    if not payload.markdown.strip():
+        raise HTTPException(status_code=400, detail="markdown 内容不能为空")
+
+    # 1. 将 Markdown 转换为 HTML 片段
+    html_body = markdown.markdown(payload.markdown, output_format="html5")
+
+    # 2. 包装成完整 HTML 文档，方便 WeasyPrint 渲染
+    full_html = f"""<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <title>Note Export</title>
+  <style>
+    body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif; line-height: 1.6; padding: 24px; }}
+    h1, h2, h3, h4, h5, h6 {{ margin-top: 1.2em; margin-bottom: 0.6em; }}
+    p {{ margin: 0.4em 0; }}
+    code, pre {{ font-family: SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; background: #f5f5f5; }}
+    pre {{ padding: 12px; overflow-x: auto; }}
+    ul, ol {{ margin-left: 1.5em; }}
+  </style>
+</head>
+<body>
+{html_body}
+</body>
+</html>
+"""
+
+    # 3. 使用 WeasyPrint 将 HTML 渲染为 PDF 字节
+    pdf_bytes = HTML(string=full_html, base_url=str(BASE_DIR)).write_pdf()
+
+    filename = payload.filename or "note.pdf"
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f"attachment; filename=\"{filename}\"",
+        },
     )

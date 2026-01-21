@@ -228,6 +228,7 @@
     const markdownRaw = qs('markdownRaw');
     const markdownView = qs('markdownView');
     const copyBtn = qs('copyBtn');
+    const exportPdfBtn = qs('exportPdfBtn');
     const notesList = qs('notesList');
 
     const uploadTabFile = qs('uploadTabFile');
@@ -289,7 +290,19 @@
     function renderMarkdown(md) {
       if (markdownRaw) markdownRaw.value = md || '';
       try {
-        const html = window.marked ? window.marked.parse(md || '') : escapeHtml(md || '');
+        let html = '';
+        if (window.marked) {
+          // 兼容两种用法：marked.parse(md)（新版本）和 marked(md)（旧版本）
+          if (typeof window.marked.parse === 'function') {
+            html = window.marked.parse(md || '');
+          } else if (typeof window.marked === 'function') {
+            html = window.marked(md || '');
+          } else {
+            html = escapeHtml(md || '');
+          }
+        } else {
+          html = escapeHtml(md || '');
+        }
         setHtml(markdownView, html);
       } catch (e) {
         setHtml(markdownView, '<pre class="whitespace-pre-wrap text-sm">' + escapeHtml(md || '') + '</pre>');
@@ -509,6 +522,72 @@
         } catch (e) {
           copyBtn.textContent = '复制失败';
           setTimeout(() => (copyBtn.textContent = '复制'), 800);
+        }
+      });
+    }
+
+    if (exportPdfBtn) {
+      exportPdfBtn.addEventListener('click', async () => {
+        const md = (markdownRaw && markdownRaw.value) ? markdownRaw.value : '';
+        if (!md.trim()) {
+          exportPdfBtn.textContent = '内容为空';
+          setTimeout(() => (exportPdfBtn.textContent = '导出 PDF'), 800);
+          return;
+        }
+
+        if (!window.html2pdf) {
+          exportPdfBtn.textContent = '浏览器不支持';
+          setTimeout(() => (exportPdfBtn.textContent = '导出 PDF'), 1000);
+          return;
+        }
+
+        exportPdfBtn.disabled = true;
+        exportPdfBtn.textContent = '导出中…';
+
+        try {
+          // 构造一个临时的「白底黑字」容器，避免继承页面的深色主题样式
+          const container = document.createElement('div');
+          container.style.backgroundColor = '#ffffff';
+          container.style.color = '#111827'; // 近似 slate-900
+          container.style.padding = '24px';
+          container.style.fontFamily = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif";
+          container.style.lineHeight = '1.6';
+          container.style.maxWidth = '800px';
+
+          // 直接使用右侧预览区域的 HTML 内容："所见即所得"
+          // 如果预览区为空，则退化为原始 markdown 文本
+          if (markdownView && markdownView.innerHTML.trim()) {
+            container.innerHTML = markdownView.innerHTML;
+          } else {
+            container.innerHTML = '<pre style="white-space: pre-wrap; font-size: 14px;">' + escapeHtml(md) + '</pre>';
+          }
+          document.body.appendChild(container);
+
+          const opt = {
+            // 外层 margin 设为 0，具体留白由 container 的 padding 控制，避免顶部大空白
+            margin:       0,
+            filename:     'ppt-notes.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  {
+              scale: 1.6,
+              useCORS: true,
+              scrollY: 0, // 避免受当前滚动位置影响
+            },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+          };
+
+          await window.html2pdf().set(opt).from(container).save();
+
+          // 清理临时节点
+          document.body.removeChild(container);
+
+          exportPdfBtn.textContent = '已导出';
+          setTimeout(() => (exportPdfBtn.textContent = '导出 PDF'), 1000);
+        } catch (e) {
+          exportPdfBtn.textContent = '导出失败';
+          setTimeout(() => (exportPdfBtn.textContent = '导出 PDF'), 1000);
+        } finally {
+          exportPdfBtn.disabled = false;
         }
       });
     }
