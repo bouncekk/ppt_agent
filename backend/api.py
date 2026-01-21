@@ -174,6 +174,15 @@ async def upload_ppt_by_url(
     url = (req.url or "").strip()
     if not url:
         raise HTTPException(status_code=400, detail="url 不能为空")
+
+    if "github.com/" in url and "/blob/" in url:
+        try:
+            prefix, rest = url.split("github.com/", 1)
+            owner_repo, path_part = rest.split("/blob/", 1)
+            url = f"https://raw.githubusercontent.com/{owner_repo}/{path_part}"
+        except Exception:
+            pass
+
     if not url.lower().split("?")[0].endswith(".pptx"):
         raise HTTPException(status_code=400, detail="仅支持 .pptx 文件 URL")
 
@@ -185,10 +194,15 @@ async def upload_ppt_by_url(
     try:
         resp = requests.get(url, stream=True, timeout=20)
         resp.raise_for_status()
+        head_checked = False
         with dest_path.open("wb") as f:
             for chunk in resp.iter_content(chunk_size=1024 * 1024):
                 if not chunk:
                     continue
+                if not head_checked:
+                    head_checked = True
+                    if not chunk.startswith(b"PK"):
+                        raise HTTPException(status_code=400, detail="URL 不是可直接下载的 .pptx 文件，请使用文件直链（例如 GitHub raw 链接或在链接后追加 ?raw=1）")
                 total += len(chunk)
                 if total > max_bytes:
                     raise HTTPException(status_code=400, detail="文件过大，最大 50MB")
@@ -202,7 +216,12 @@ async def upload_ppt_by_url(
             dest_path.unlink(missing_ok=True)
         raise HTTPException(status_code=400, detail="URL 下载失败")
 
-    slides = parse_ppt(dest_path)
+    try:
+        slides = parse_ppt(dest_path)
+    except Exception:
+        if dest_path.exists():
+            dest_path.unlink(missing_ok=True)
+        raise HTTPException(status_code=400, detail="下载的内容无法解析为 PPTX，请确认 URL 为可直接下载的 .pptx 文件")
     PPT_SLIDES[ppt_id] = slides
     index_ppt_file(dest_path, ppt_id=ppt_id)
     return UploadResponse(ppt_id=ppt_id, filename=dest_path.name, num_slides=len(slides))
