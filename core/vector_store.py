@@ -8,7 +8,7 @@ import chromadb
 from core.ppt_parser import Slide, parse_ppt
 
 
-# 本地 Chroma 客户端，使用 PersistentClient 持久化到项目目录下的 chroma_db/
+# 使用 PersistentClient 持久化到项目目录下的 chroma_db/
 _client = chromadb.PersistentClient(path=str(Path(__file__).resolve().parent / "chroma_db"))
 
 
@@ -37,7 +37,7 @@ def slide_to_document(slide: Slide) -> str:
 def index_slides(slides: List[Slide], ppt_id: str, collection_name: str = "ppt_slides") -> None:
     """将一组 Slide 写入 Chroma 向量库。
 
-    - ppt_id: 用于标记属于同一 PPT 的切片，例如 "sample"、课程代码等。
+    - ppt_id: 用于标记属于同一 PPT 的切片。
     - 每个 slide 将生成一个唯一 id: f"{ppt_id}-{slide.index}"。
     """
 
@@ -76,7 +76,7 @@ def query_similar_slides(
     n_results: int = 5,
     collection_name: str = "ppt_slides",
 ) -> Dict[str, Any]:
-    """基于语义相似度，在本地 Chroma 向量库中检索相关的幻灯片。
+    """基于语义相似度，在Chroma 向量库中检索相关的幻灯片。
 
     返回值为 Chroma 的原始 query 结果字典，其中包含 ids、distances、metadatas 等字段。
     上层可以根据 metadatas 中的 ppt_id、slide_index 做进一步渲染。

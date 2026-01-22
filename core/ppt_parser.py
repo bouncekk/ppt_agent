@@ -10,12 +10,6 @@ from pptx import Presentation
 
 @dataclass
 class Slide:
-    """单页 PPT 的结构化表示。
-
-    当前实现基于 python-pptx 对 .pptx 文件进行解析，
-    将每页中的文本内容抽取并映射到该结构。
-    """
-
     index: int
     title: str
     bullets: List[str]
@@ -25,7 +19,7 @@ class Slide:
 def parse_ppt(path: str | Path) -> List[Slide]:
     """使用 python-pptx 将 PPT 文件解析为 Slide 列表的最小可用实现。
 
-    解析策略（简单版本，便于后续迭代）：
+    解析策略：
     - 遍历每一页 slide；
     - 收集当前页中所有带文本的 shape；
     - 第一段非空文本作为标题 `title`；
@@ -65,7 +59,6 @@ def parse_ppt(path: str | Path) -> List[Slide]:
             title = f"Slide {idx}"
             bullets = []
 
-        # 备注区（notes）当前作为占位，后续可按需要补充
         notes: str | None = None
 
         slides.append(
@@ -88,9 +81,6 @@ def slides_to_json(slides: List[Slide]) -> str:
 
 def parse_ppt_to_json_file(ppt_path: str | Path, output_path: str | Path) -> Path:
     """占位管线：PPT → Slide 结构 → JSON 文件。
-
-    实际解析逻辑完成后，可在命令行或其他模块中直接调用本函数：
-    parse_ppt_to_json_file("input.pptx", "output.json")
     """
 
     slides = parse_ppt(ppt_path)

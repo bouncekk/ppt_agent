@@ -18,13 +18,12 @@ from core.llm_agent import AgentConfig, expand_slide_with_tools
 
 import markdown
 
-try:  # WeasyPrint 依赖系统级库，在本地缺失时不应阻止整个后端启动
-    from weasyprint import HTML  # type: ignore
-except Exception:  # pragma: no cover - 仅在缺失依赖时触发
-    HTML = None  # type: ignore
+try: 
+    from weasyprint import HTML  
+except Exception:  
+    HTML = None  
 
 
-# 以项目根目录 ppt_agent 为基准
 BASE_DIR = Path(__file__).resolve().parent.parent
 UPLOAD_DIR = BASE_DIR / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
@@ -268,7 +267,6 @@ async def search_slides(
     if not q.strip():
         raise HTTPException(status_code=400, detail="查询语句不能为空")
 
-    # 初步检索更多结果，再按 ppt_id 过滤
     raw = query_similar_slides(q, n_results=top_k * 3)
     ids_batch = raw.get("ids", [[]])[0]
     metas_batch = raw.get("metadatas", [[]])[0]
@@ -300,7 +298,7 @@ async def search_slides(
 async def expand_slide(
     ppt_id: str = Query(..., description="目标 PPT 标识"),
     slide_index: int = Query(..., ge=1, description="要扩展的页面索引（从 1 开始）"),
-    use_wikipedia: bool = Query(True, description="是否启用 Wikipedia 外部知识"),
+    use_wikipedia: bool = Query(True, description="是否启用外部知识"),
     _: str = Depends(get_current_user),
 ) -> ExpandResponse:
     """为指定 PPT 的某一页生成扩展讲解（调用 Agent + Checklayer）。"""
@@ -336,7 +334,6 @@ async def export_note_pdf(payload: NoteExportRequest) -> Response:
     """
 
     if HTML is None:
-        # 在未正确安装 WeasyPrint / 底层 GTK 依赖时，给出明确提示
         raise HTTPException(
             status_code=500,
             detail=(
@@ -349,10 +346,7 @@ async def export_note_pdf(payload: NoteExportRequest) -> Response:
     if not payload.markdown.strip():
         raise HTTPException(status_code=400, detail="markdown 内容不能为空")
 
-    # 1. 将 Markdown 转换为 HTML 片段
     html_body = markdown.markdown(payload.markdown, output_format="html5")
-
-    # 2. 包装成完整 HTML 文档，方便 WeasyPrint 渲染
     full_html = f"""<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -373,7 +367,6 @@ async def export_note_pdf(payload: NoteExportRequest) -> Response:
 </html>
 """
 
-    # 3. 使用 WeasyPrint 将 HTML 渲染为 PDF 字节
     pdf_bytes = HTML(string=full_html, base_url=str(BASE_DIR)).write_pdf()
 
     filename = payload.filename or "note.pdf"

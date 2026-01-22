@@ -29,6 +29,6 @@ venv/
 .coverage
 htmlcov/
 
-# 数据和模型缓存（按需再补充）
+# 数据和模型缓存
 data/
 cache/

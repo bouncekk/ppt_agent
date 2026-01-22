@@ -1,12 +1,5 @@
-"""LLM Agent 与工具链封装（阶段四）。
-
-本模块将文档解析结果、向量检索与 Wikipedia 外部知识结合，
-构造对 DeepSeek 等大模型的提示词，并预留 API Key 配置位置。
-
-注意：
-- 为避免在示例环境中直接调用付费/外部 LLM，默认的 `call_llm` 实现
-  仅返回占位文本。真正接入 DeepSeek 时，只需在该函数中替换为
-  实际的 HTTP 请求逻辑，并通过环境变量 `DEEPSEEK_API_KEY` 读取密钥。
+"""
+LLM Agent 与工具链封装。
 """
 
 from __future__ import annotations
@@ -157,7 +150,6 @@ def call_llm(prompt: str, api_key: Optional[str] = None) -> str:
             temperature=0.2,
         )
 
-        # 与 notebook 中类似：使用 system + user 两条消息
         from langchain_core.messages import SystemMessage, HumanMessage
 
         messages = [
@@ -181,19 +173,14 @@ def expand_slide_with_tools(
     ppt_id: str | None = None,
 ) -> str:
     """综合使用向量检索与 外部知识源，生成单页 PPT 的扩展讲解。
-
-    在无 DeepSeek API Key 的情况下，仍会返回占位内容，
-    但提示词和工具调用链路与真实部署时保持一致，便于后续对接。
     """
 
     cfg = config or AgentConfig()
 
-    # 1. 基于 slide 标题做一次向量检索
     retrieved_context = build_slide_context_from_retrieval(
         slide, top_k=cfg.top_k_slides, ppt_id=ppt_id
     )
 
-    # 2. 调用外部知识检索扩展背景
     wiki_snippets: List[str] = []
     if cfg.use_wikipedia and slide.title:
         wiki_snippets = search_external_knowledge(
@@ -201,7 +188,6 @@ def expand_slide_with_tools(
             max_results=cfg.top_k_wiki,
         )
 
-    # 3. 构造 Prompt 并调用 LLM（或占位函数）
     prompt = build_prompt_for_slide_expansion(
         slide=slide,
         retrieved_context=retrieved_context,

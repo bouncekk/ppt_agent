@@ -36,7 +36,6 @@
       </div>
     </div>
     <script>
-      // 如果已登录则直接跳转到上传页
       try {
         const token = localStorage.getItem('ppt_agent_token');
         if (token) window.location.replace('/ui/upload.html');

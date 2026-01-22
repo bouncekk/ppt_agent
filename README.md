@@ -14,7 +14,7 @@
 
 ## 三、技术选型概览
 
-详见 `jishuwendang.md` 或下表（节选）：
+详见 `技术文档.md` 或下表（节选）：
 
 - 后端框架：FastAPI
 - LLM：DeepSeek 云 API（可按需替换为其他云端模型）
