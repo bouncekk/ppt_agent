@@ -43,39 +43,49 @@
 4. 用户选择页面或发起“扩展讲解”请求时，后端基于向量检索召回相关内容；
 5. LLM Agent 结合检索结果与外部知识源，生成扩展讲解并返回前端展示。
 
-## 五、开发与运行
+## 五、运行指南
 
+### 本地运行
 
 ```bash
+# 首先创建虚拟环境
+conda create -n ai_ppt python=3.11
+conda activate ai_ppt
 
-本地运行：
-pip install -r requirements.txt
-# TODO: 在实现 FastAPI 后补充实际启动命令，例如：
-# uvicorn app.main:app --reload
-
-# 开发调试
-python -m uvicorn backend.api:app --reload --host 127.0.0.1 --port 8000
-# 稳定运行
-python -m uvicorn backend.api:app --host 127.0.0.1 --port 8000
-
-Docker运行  
-# TODO: 在编写 Dockerfile 和 docker-compose.yml 后补充示例命令
-# docker build -t ppt-agent .
-# docker run -p 8000:8000 ppt-agent
-
-# 必须在同一个终端窗口设置：
+# 输入api
 $env:SILICONFLOW_API_KEY="你的key"
 $env:SILICONFLOW_BASE_URL="https://api.siliconflow.cn/v1"
 $env:DEEPSEEK_MODEL="deepseek-ai/DeepSeek-V3.2-Exp"
 
-# 之后构建并启动容器
-docker compose up -d --build
+# 下载依赖
+pip install -r requirements.txt
+
+
+# 稳定运行
+python -m uvicorn backend.api:app --host 127.0.0.1 --port 8000
 
 ```
 
+### Docker 运行
+
+```bash
+# 同样创建虚拟环境
+conda create -n ai_ppt python=3.11
+conda activate ai_ppt
+
+# 输入api
+$env:SILICONFLOW_API_KEY="你的key"
+$env:SILICONFLOW_BASE_URL="https://api.siliconflow.cn/v1"
+$env:DEEPSEEK_MODEL="deepseek-ai/DeepSeek-V3.2-Exp"
+
+# 构建容器
+docker compose up -d --build
+```
+
 ### 打开网页
+
 1. 打开导航页：
 http://localhost:8000/ui/index.html
 
-2. 测试健康检查：
+2. 测试健康检查(看到结果为{"status":"ok"}即可)：
 http://localhost:8000/health
