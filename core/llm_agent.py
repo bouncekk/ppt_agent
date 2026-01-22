@@ -19,7 +19,7 @@ from langchain_openai import ChatOpenAI
 
 from core.ppt_parser import Slide
 from core.vector_store import query_similar_slides
-from core.external_knowledge import search_wikipedia
+from core.external_knowledge import search_external_knowledge
 
 
 # 为了避免在代码仓库中硬编码密钥，这里通过环境变量读取：
@@ -40,10 +40,19 @@ class AgentConfig:
     top_k_wiki: int = 3
 
 
-def build_slide_context_from_retrieval(slide: Slide, top_k: int) -> str:
+def build_slide_context_from_retrieval(
+    slide: Slide,
+    top_k: int,
+    ppt_id: str | None = None,
+) -> str:
     """基于当前 slide 的标题做一次语义检索，返回可供拼接的文本上下文。"""
 
-    query_text = slide.title or ""
+    parts: List[str] = []
+    if slide.title:
+        parts.append(slide.title)
+    if slide.bullets:
+        parts.extend(slide.bullets[:8])
+    query_text = "\n".join([p.strip() for p in parts if p and p.strip()])
     if not query_text.strip():
         return ""
 
@@ -54,6 +63,8 @@ def build_slide_context_from_retrieval(slide: Slide, top_k: int) -> str:
     lines: List[str] = []
     for meta, doc in zip(metadatas, documents):
         if not isinstance(meta, dict):
+            continue
+        if ppt_id and meta.get("ppt_id") != ppt_id:
             continue
         idx = meta.get("slide_index")
         title = meta.get("title")
@@ -75,9 +86,14 @@ def build_prompt_for_slide_expansion(
     return f"""你是一个帮助学生考前复习的智能助教，需要根据 PPT 内的一页内容，
 结合相关页面与外部知识，生成结构化的扩展讲解笔记。
 
+重要约束：
+1. 只允许基于下方提供的「当前 PPT 页面」「PPT 内部相关页面（检索得到）」「外部知识片段」进行推理与改写；
+2. 若材料中找不到支撑某个结论/数字/定义，请明确写“材料不足/待查证/可能”，不要编造；
+3. 尽量在关键结论句末尾标注来源标签：[PPT] / [检索] / [arXiv: 论文标题]，例如：[arXiv: PyramidTNT]。
+
 在生成最终答案前，请显式执行一个两阶段的 Checklayer 过程：
 1. Self-consistency 检查：对你即将输出的要点、公式、示例代码进行自我审查，避免前后矛盾、逻辑不一致或同一段内容反复重复；
-2. 事实与上下文校验：对照下面给出的「PPT 内部相关页面」和「Wikipedia 外部知识片段」，判断关键结论是否与上下文明显冲突，如发现冲突或高度不确定，请在答案中标注“可能/待查证”，并避免给出过于确定的错误结论。
+2. 事实与上下文校验：对照下面给出的「PPT 内部相关页面」和「arXiv」，判断关键结论是否与上下文明显冲突，如发现冲突或高度不确定，请在答案中标注“可能/待查证”，并避免给出过于确定的错误结论。
 
 【当前 PPT 页面】
 索引: {slide.index}
@@ -89,7 +105,7 @@ def build_prompt_for_slide_expansion(
 【PPT 内部相关页面（检索得到）】
 {retrieved_context or '无相关页面'}
 
-【Wikipedia 外部知识片段】
+【外部知识片段】
 {wiki_block}
 
 请用简体中文输出本页的扩展讲解，包含以下几个部分：
@@ -137,7 +153,7 @@ def call_llm(prompt: str, api_key: Optional[str] = None) -> str:
             base_url=base_url,
             model=model,
             max_retries=3,
-            temperature=0.4,
+            temperature=0.2,
         )
 
         # 与 notebook 中类似：使用 system + user 两条消息
@@ -158,8 +174,12 @@ def call_llm(prompt: str, api_key: Optional[str] = None) -> str:
         )
 
 
-def expand_slide_with_tools(slide: Slide, config: Optional[AgentConfig] = None) -> str:
-    """综合使用向量检索与 Wikipedia，生成单页 PPT 的扩展讲解。
+def expand_slide_with_tools(
+    slide: Slide,
+    config: Optional[AgentConfig] = None,
+    ppt_id: str | None = None,
+) -> str:
+    """综合使用向量检索与 外部知识源，生成单页 PPT 的扩展讲解。
 
     在无 DeepSeek API Key 的情况下，仍会返回占位内容，
     但提示词和工具调用链路与真实部署时保持一致，便于后续对接。
@@ -169,13 +189,16 @@ def expand_slide_with_tools(slide: Slide, config: Optional[AgentConfig] = None) 
 
     # 1. 基于 slide 标题做一次向量检索
     retrieved_context = build_slide_context_from_retrieval(
-        slide, top_k=cfg.top_k_slides
+        slide, top_k=cfg.top_k_slides, ppt_id=ppt_id
     )
 
-    # 2. 调用 Wikipedia 搜索扩展背景
+    # 2. 调用外部知识检索扩展背景
     wiki_snippets: List[str] = []
     if cfg.use_wikipedia and slide.title:
-        wiki_snippets = search_wikipedia(slide.title, max_results=cfg.top_k_wiki)
+        wiki_snippets = search_external_knowledge(
+            slide.title,
+            max_results=cfg.top_k_wiki,
+        )
 
     # 3. 构造 Prompt 并调用 LLM（或占位函数）
     prompt = build_prompt_for_slide_expansion(

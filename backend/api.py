@@ -315,7 +315,7 @@ async def expand_slide(
         raise HTTPException(status_code=404, detail="指定的 slide_index 不存在")
 
     cfg = AgentConfig(use_wikipedia=use_wikipedia, top_k_slides=5, top_k_wiki=3)
-    expanded = expand_slide_with_tools(slide, config=cfg)
+    expanded = expand_slide_with_tools(slide, config=cfg, ppt_id=ppt_id)
 
     return ExpandResponse(
         ppt_id=ppt_id,
