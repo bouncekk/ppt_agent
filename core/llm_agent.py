@@ -114,6 +114,7 @@ def build_prompt_for_slide_expansion(
 3. 示例（代码或生活类比均可）
 4. 延伸阅读建议
 5. AI 自评（见下方要求）
+6. Checklayer
 
 要求：
 - 注意与原 PPT 标题和要点保持语义一致，不要偏题；
